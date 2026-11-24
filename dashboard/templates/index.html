@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Environment Monitoring IoT system, Secured by AI</title>
+<style>
+  :root {
+    --bg:#060a12; --surface:#0c1424; --surface2:#0f1a2e;
+    --border:rgba(255,255,255,0.07); --text:#dce8ff; --muted:#5c7a9e;
+    --accent:#1a8cff; --accent2:#00c8ff; --red:#e53935; --green:#00c853; --orange:#ff8f00;
+    --mono:'IBM Plex Mono', Consolas, 'Courier New', monospace;
+    --sans:'IBM Plex Sans', 'Segoe UI', Arial, sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;padding:24px 28px;
+    background-image:linear-gradient(rgba(26,140,255,.03) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(26,140,255,.03) 1px,transparent 1px);
+    background-size:60px 60px}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;
+    padding-bottom:16px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:12px}
+  .title{font-family:var(--mono);font-size:.82rem;font-weight:700;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--accent2)}
+  .sub{font-size:.75rem;color:var(--muted);margin-top:4px}
+  .status{font-family:var(--mono);font-size:.78rem;padding:6px 14px;border-radius:20px;
+    border:1px solid var(--border);display:flex;align-items:center;gap:8px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--muted)}
+  .status.on{color:var(--green);border-color:rgba(0,200,83,.4)} .status.on .dot{background:var(--green)}
+  .status.off{color:var(--red);border-color:rgba(229,57,53,.4)} .status.off .dot{background:var(--red)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:22px}
+  .tile{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+  .label{font-family:var(--mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .value{font-family:var(--mono);font-size:1.9rem;font-weight:600;margin-top:8px}
+  .unit{font-size:.9rem;color:var(--muted);margin-left:3px}
+  .tile.red{border-color:rgba(229,57,53,.6);background:rgba(229,57,53,.12)} .tile.red .value{color:var(--red)}
+  .tile.green{border-color:rgba(0,200,83,.4)} .tile.green .value{color:var(--green)}
+  .tile.orange{border-color:rgba(255,143,0,.5)} .tile.orange .value{color:var(--orange)}
+  .tile.muted .value{color:var(--muted)}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+  canvas{width:100%;height:220px;display:block;margin-top:10px}
+  .foot{margin-top:14px;font-family:var(--mono);font-size:.7rem;color:var(--muted)}
+
+  /* ---- security section (added in Phase 8) ---- */
+  .sec{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin:0 0 12px}
+  .badge{font-family:var(--mono);font-size:.68rem;letter-spacing:.12em;padding:4px 12px;border-radius:20px;
+    border:1px solid var(--border);color:var(--muted)}
+  .badge.dry{color:var(--orange);border-color:rgba(255,143,0,.5)}
+  .badge.armed{color:var(--red);border-color:rgba(229,57,53,.6)}
+  .value.sm{font-size:1.25rem;margin-top:12px}
+  .note{font-family:var(--mono);font-size:.66rem;color:var(--muted);margin-top:6px;min-height:1em}
+  .wide{grid-column:span 2}
+  .blocked{font-family:var(--mono);font-size:.78rem;color:var(--muted);margin-top:8px}
+  .blocked b{color:var(--red);font-weight:600}
+  .tablewrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:.74rem;margin-top:10px}
+  th{text-align:left;color:var(--muted);font-weight:400;letter-spacing:.1em;text-transform:uppercase;
+    font-size:.64rem;padding:6px 8px;border-bottom:1px solid var(--border)}
+  td{padding:6px 8px;border-bottom:1px solid var(--border)}
+  td.atk{color:var(--red);font-weight:600} td.ok{color:var(--green)}
+  td.empty{color:var(--muted)}
+  .gap{height:22px}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <div class="title">Smart Environment Monitoring IoT system, Secured by AI</div>
+    <div class="sub">Node: node1 &middot; live readings from the ESP32</div>
+  </div>
+  <div id="status" class="status"><span class="dot"></span><span id="statusText">WAITING</span></div>
+</header>
+
+<div class="grid">
+  <div class="tile" id="tTemp"><div class="label">Temperature</div><div class="value"><span id="vTemp">--</span><span class="unit">&deg;C</span></div></div>
+  <div class="tile" id="tHum"><div class="label">Humidity</div><div class="value"><span id="vHum">--</span><span class="unit">%</span></div></div>
+  <div class="tile" id="tMotion"><div class="label">Motion</div><div class="value" id="vMotion">--</div></div>
+  <div class="tile" id="tFan"><div class="label">Fan (relay)</div><div class="value" id="vFan">--</div></div>
+  <div class="tile" id="tAlert"><div class="label">Security alert</div><div class="value" id="vAlert">--</div></div>
+</div>
+
+<div class="sec">
+  <div class="label">Network security &middot; AI flood detector</div>
+  <div id="modeBadge" class="badge">DETECTOR OFF</div>
+</div>
+
+<div class="grid">
+  <div class="tile muted wide" id="tState"><div class="label">Network state</div><div class="value sm" id="vState">DETECTOR OFF</div><div class="note" id="nState">Start detector\detector.py</div></div>
+  <div class="tile muted" id="tConf"><div class="label">Last verdict confidence</div><div class="value" id="vConf">--</div><div class="note" id="nConf"></div></div>
+  <div class="tile muted" id="tPps"><div class="label">Packets per second</div><div class="value"><span id="vPps">--</span></div><div class="note">all traffic, last 5 s</div></div>
+  <div class="tile muted" id="tBlk"><div class="label">Blocked IPs</div><div class="value" id="vBlk">--</div><div class="note" id="nBlk"></div></div>
+</div>
+
+<div class="panel">
+  <div class="label">Last 10 scored flows (newest first)</div>
+  <div class="blocked" id="blockedList"></div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Time</th><th>Source</th><th>Port</th><th>Proto</th><th>Packets</th><th>Attack prob.</th><th>Verdict</th></tr></thead>
+      <tbody id="flowBody"><tr><td class="empty" colspan="7">Detector not running.</td></tr></tbody>
+    </table>
+  </div>
+  <div class="foot" id="secFoot">Rule: 3 of the last 5 flows from one source</div>
+</div>
+
+<div class="gap"></div>
+
+<div class="panel">
+  <div class="label">Temperature and humidity, last 60 readings</div>
+  <canvas id="chart"></canvas>
+  <div class="foot" id="foot">No data yet</div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function setTile(id, cls){ $(id).className = 'tile ' + cls; }
+
+async function refreshLatest(){
+  try{
+    const d = await (await fetch('/api/latest')).json();
+    const st = $('status');
+    if(!d.reading){ st.className='status'; $('statusText').textContent='NO DATA'; return; }
+    st.className = 'status ' + (d.online ? 'on' : 'off');
+    $('statusText').textContent = d.online ? 'DEVICE ONLINE' : 'DEVICE OFFLINE';
+    const r = d.reading;
+    $('vTemp').textContent = r.temp.toFixed(1);
+    $('vHum').textContent  = r.hum.toFixed(1);
+    $('vMotion').textContent = r.motion ? 'DETECTED' : 'NONE';
+    $('vFan').textContent    = r.fan ? 'ON' : 'OFF';
+    $('vAlert').textContent  = r.alert ? 'ALERT' : 'CLEAR';
+    setTile('tMotion', r.motion ? 'orange' : '');
+    setTile('tFan',    r.fan ? 'green' : '');
+    setTile('tAlert',  r.alert ? 'red' : 'green');
+    $('foot').textContent = 'Last reading: ' + r.ts + ' (' + d.age + ' s ago)';
+  }catch(e){
+    $('statusText').textContent = 'DASHBOARD ERROR';
+  }
+}
+
+function drawLine(ctx, vals, min, max, x0, y0, w, h, color){
+  ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath();
+  vals.forEach((v,i) => {
+    const x = x0 + (vals.length > 1 ? i/(vals.length-1) : 0) * w;
+    const y = y0 + h - (v-min)/(max-min||1) * h;
+    i ? ctx.lineTo(x,y) : ctx.moveTo(x,y);
+  });
+  ctx.stroke();
+}
+
+async function refreshChart(){
+  try{
+    const rows = await (await fetch('/api/history?n=60')).json();
+    if(!rows.length) return;
+    const c = $('chart'), dpr = window.devicePixelRatio || 1;
+    c.width = c.clientWidth * dpr; c.height = c.clientHeight * dpr;
+    const ctx = c.getContext('2d'); ctx.scale(dpr, dpr);
+    const W = c.clientWidth, H = c.clientHeight, pad = 34;
+    ctx.clearRect(0,0,W,H);
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.lineWidth = 1;
+    for(let i=0;i<=4;i++){ const y = pad/2 + i*(H-pad)/4; ctx.beginPath(); ctx.moveTo(pad,y); ctx.lineTo(W,y); ctx.stroke(); }
+    const t = rows.map(r=>r.temp), h = rows.map(r=>r.hum);
+    drawLine(ctx, t, Math.min(...t)-1, Math.max(...t)+1, pad, pad/2, W-pad, H-pad, '#00c8ff');
+    drawLine(ctx, h, Math.min(...h)-2, Math.max(...h)+2, pad, pad/2, W-pad, H-pad, '#1a8cff');
+    ctx.font = '11px monospace'; ctx.fillStyle = '#00c8ff'; ctx.fillText('temp', pad+6, 12);
+    ctx.fillStyle = '#1a8cff'; ctx.fillText('humidity', pad+50, 12);
+  }catch(e){}
+}
+
+/* ---------- security section ---------- */
+
+const SUSPICIOUS_SECONDS = 30;   // an ATTACK verdict younger than this shows SUSPICIOUS
+
+// Age of the last verdict in seconds. The status file gives the verdict time as HH:MM:SS
+// and the file's own update time, so we measure against the file time, not the browser clock.
+function verdictAge(d){
+  const v = d.last_verdict;
+  if(!v || !v.time || d.updated == null) return null;
+  const p = v.time.split(':').map(Number);
+  if(p.length !== 3 || p.some(isNaN)) return null;
+  const u = new Date(d.updated * 1000);
+  let diff = (u.getHours()*3600 + u.getMinutes()*60 + u.getSeconds()) - (p[0]*3600 + p[1]*60 + p[2]);
+  if(diff < 0) diff += 86400;
+  return diff + (d.age || 0);
+}
+
+function setText(id, txt){ $(id).textContent = txt; }
+
+function secOff(msg){
+  const b = $('modeBadge'); b.className = 'badge'; b.textContent = 'DETECTOR OFF';
+  setTile('tState', 'muted wide'); setText('vState', 'DETECTOR OFF'); setText('nState', msg || 'Start detector\\detector.py');
+  $('vState').className = 'value sm';
+  setTile('tConf', 'muted'); setText('vConf', '--'); setText('nConf', '');
+  setTile('tPps', 'muted');  setText('vPps', '--');
+  setTile('tBlk', 'muted');  setText('vBlk', '--'); setText('nBlk', '');
+  $('blockedList').textContent = '';
+  const tb = $('flowBody'); tb.textContent = '';
+  const tr = document.createElement('tr'), td = document.createElement('td');
+  td.className = 'empty'; td.colSpan = 7; td.textContent = 'Detector not running.';
+  tr.appendChild(td); tb.appendChild(tr);
+}
+
+async function refreshSecurity(){
+  let d;
+  try{ d = await (await fetch('/api/security')).json(); }
+  catch(e){ secOff('Cannot read /api/security'); return; }
+  if(!d || d.detector !== 'on'){ secOff(); return; }
+
+  // mode badge
+  const armed = d.mode === 'ARMED';
+  const b = $('modeBadge'); b.className = 'badge ' + (armed ? 'armed' : 'dry');
+  b.textContent = armed ? 'ARMED (blocking is real)' : 'DRY RUN (no firewall changes)';
+
+  const blocked = Array.isArray(d.blocked) ? d.blocked : [];
+  const v = d.last_verdict;
+  const age = verdictAge(d);
+  const freshAttack = v && v.label === 'ATTACK' && age !== null && age <= SUSPICIOUS_SECONDS;
+
+  // state tile
+  let cls, txt, note;
+  if(blocked.length){
+    cls = 'red'; txt = 'UNDER ATTACK';
+    note = armed ? 'Attacker blocked in the firewall' : 'Dry run: would block';
+  }else if(freshAttack){
+    cls = 'orange'; txt = 'SUSPICIOUS'; note = 'Attack-like flow seen ' + Math.round(age) + ' s ago';
+  }else{
+    cls = 'green'; txt = 'NORMAL';
+    note = v ? 'No attack in the last ' + SUSPICIOUS_SECONDS + ' s' : 'No suspicious traffic';
+  }
+  setTile('tState', cls + ' wide'); setText('vState', txt); setText('nState', note);
+  $('vState').className = 'value sm';
+
+  // confidence of last verdict
+  if(v){
+    setText('vConf', Math.round(v.attack_prob * 100) + '%');
+    setText('nConf', v.label + (age !== null ? ', ' + Math.round(age) + ' s ago' : ''));
+    setTile('tConf', freshAttack ? 'orange' : (v.label === 'ATTACK' ? 'muted' : 'green'));
+  }else{
+    setText('vConf', '--'); setText('nConf', 'no flow scored yet'); setTile('tConf', 'muted');
+  }
+
+  // packets per second
+  setText('vPps', Math.round(d.pps || 0));
+  setTile('tPps', (d.pps || 0) > 300 ? 'orange' : 'green');
+
+  // blocked count + list with countdown
+  setText('vBlk', blocked.length);
+  setTile('tBlk', blocked.length ? 'red' : 'green');
+  setText('nBlk', armed ? 'firewall rules active' : 'dry run: would block');
+  const bl = $('blockedList'); bl.textContent = '';
+  blocked.forEach((x, i) => {
+    if(i) bl.appendChild(document.createTextNode('   '));
+    const s = document.createElement('b'); s.textContent = x.ip;
+    bl.appendChild(s);
+    bl.appendChild(document.createTextNode(' (' + Math.round(x.seconds_left) + ' s left)'));
+  });
+
+  // table of last 10 scored flows
+  const tb = $('flowBody'); tb.textContent = '';
+  const rows = Array.isArray(d.recent) ? d.recent : [];
+  if(!rows.length){
+    const tr = document.createElement('tr'), td = document.createElement('td');
+    td.className = 'empty'; td.colSpan = 7;
+    td.textContent = 'No flows scored yet. Normal: the ESP32 is whitelisted, so calm traffic is not scored.';
+    tr.appendChild(td); tb.appendChild(tr);
+  }
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    const cells = [r.time, r.src, r.port, r.proto, r.packets, (r.attack_prob * 100).toFixed(0) + '%', r.label];
+    cells.forEach((c, i) => {
+      const td = document.createElement('td');
+      td.textContent = c;
+      if(i === 6) td.className = r.label === 'ATTACK' ? 'atk' : 'ok';
+      tr.appendChild(td);
+    });
+    tb.appendChild(tr);
+  });
+
+  const c = d.counts || {};
+  $('secFoot').textContent = 'Rule: ' + (d.rule || '3 of the last 5 flows') +
+    ' \u00b7 flows ' + (c.flows ?? 0) + ', attacks ' + (c.attacks ?? 0) + ', alerts ' + (c.alerts ?? 0);
+}
+
+refreshLatest(); refreshChart(); refreshSecurity();
+setInterval(refreshLatest, 2000);
+setInterval(refreshChart, 4000);
+setInterval(refreshSecurity, 1000);
+</script>
+</body>
+</html>

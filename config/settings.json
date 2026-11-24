@@ -1,0 +1,15 @@
+{
+  "defender_ip": "192.168.137.1",
+  "esp32_ip": "192.168.137.79",
+  "protected_port": 1883,
+  "whitelist": ["192.168.137.1", "192.168.137.79", "192.168.137.255"],
+  "model_dir": "models/live_v1",
+  "model_variant": "noport",
+  "flows_window": 5,
+  "flows_needed": 3,
+  "block_seconds": 120,
+  "mqtt_host": "127.0.0.1",
+  "mqtt_port": 1883,
+  "cmd_topic": "iotnids-demo-4821/node1/cmd",
+  "dry_run": true
+}

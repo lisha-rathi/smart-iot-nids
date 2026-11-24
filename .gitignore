@@ -1,0 +1,14 @@
+venv/
+__pycache__/
+*.pyc
+*.db
+*.pcap
+*.log
+CLAUDE.md
+requirements_old.txt
+reference_old_app/
+models/live_v1_backup/
+*.backup.*
+*.before_http.py
+data/security_status.json
+models/baseline_cicids/

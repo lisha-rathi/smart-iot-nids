@@ -1,0 +1,20 @@
+{
+  "tag": "WITH Destination Port",
+  "recall": 1.0,
+  "precision": 0.8992248062015504,
+  "false_alarm_rate": 0.02490421455938697,
+  "tp": 116,
+  "fn": 0,
+  "fp": 13,
+  "tn": 509,
+  "per_attack": {
+    "SYN_FLOOD": {
+      "caught": 55,
+      "total": 55
+    },
+    "UDP_FLOOD": {
+      "caught": 61,
+      "total": 61
+    }
+  }
+}
